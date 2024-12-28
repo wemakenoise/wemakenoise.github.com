@@ -164,7 +164,7 @@
             const lowControl = document.getElementById('low');
 
             volumeControl.addEventListener('input', () => {
-                gainNode.gain.value = volumeControl.value / 100;
+                gainNode.gain.value = volumeControl.value / 100 * 0.3;
             });
 
             pitchControl.addEventListener('input', () => {
