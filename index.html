@@ -8,239 +8,220 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: black;
+            background: black;
             color: white;
             font-family: Arial, sans-serif;
+            text-align: center;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
             height: 100vh;
             overflow: hidden;
         }
-
         h1 {
             font-size: 3rem;
-            font-weight: bold;
-            margin-bottom: 2rem;
-            text-align: center;
+            margin-bottom: 1rem;
+            letter-spacing: 0.1rem;
         }
-
-        .button {
-            border: 1px solid white;
-            border-radius: 50px;
-            padding: 10px 20px;
-            background: none;
-            color: white;
+        .warning {
             font-size: 1rem;
-            text-transform: uppercase;
+            color: #ff5555;
+            margin-bottom: 1.5rem;
+        }
+        .controls {
+            margin: 2rem 0;
+        }
+        .controls label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+        input[type="range"] {
+            width: 80%;
+            max-width: 400px;
+            margin: 0.5rem auto;
+        }
+        .button {
+            padding: 15px 30px;
+            background-color: #333;
+            color: white;
+            border: none;
             cursor: pointer;
-            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            transition: background-color 0.3s ease;
         }
-
         .button:hover {
-            background: white;
-            color: black;
+            background-color: #555;
         }
-
-        .sliders {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .slider-container {
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .slider-label {
-            margin-right: 10px;
-        }
-
-        .slider {
-            width: 300px;
-        }
-
         .footer {
             position: absolute;
-            bottom: 20px;
+            bottom: 10px;
+            width: 100%;
             text-align: center;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
+            color: #888;
         }
-
         .footer a {
-            color: white;
+            color: #888;
             text-decoration: none;
         }
-
         .footer a:hover {
             text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <h1>WE MAKE NOISE. NOT MUSIC</h1>
-    <button class="button" onclick="toggleNoise()">MAKE NOISE</button>
+    <h1>WE MAKE NOISE. NOT MUSIC.</h1>
+    <p class="warning">Warning: This noise can be VERY loud. Adjust volume before starting. Personally, I recommend to start with 35-45% on your device.</p>
+    <button class="button" onclick="toggleNoise()">Make Noise</button>
+    <div class="controls">
+        <label for="volume">Volume</label>
+        <input id="volume" type="range" min="0" max="100" value="25">
 
-    <div class="sliders">
-        <div class="slider-container">
-            <label for="volume" class="slider-label">VOLUME</label>
-            <input type="range" id="volume" class="slider" min="0" max="100" value="50">
-        </div>
-        <div class="slider-container">
-            <label for="pitch" class="slider-label">PITCH</label>
-            <input type="range" id="pitch" class="slider" min="0" max="100" value="50">
-        </div>
-        <div class="slider-container">
-            <label for="speed" class="slider-label">SPEED</label>
-            <input type="range" id="speed" class="slider" min="0" max="100" value="50">
-        </div>
-        <div class="slider-container">
-            <label for="granularity" class="slider-label">GRANULARITY</label>
-            <input type="range" id="granularity" class="slider" min="0" max="100" value="50">
-            <button class="button" onclick="toggleRandomGranularity()" style="margin-left: 10px;">SMOOTH</button>
-        </div>
-        <div class="slider-container">
-            <label for="high" class="slider-label">HIGH</label>
-            <input type="range" id="high" class="slider" min="0" max="100" value="50">
-        </div>
-        <div class="slider-container">
-            <label for="mid" class="slider-label">MID</label>
-            <input type="range" id="mid" class="slider" min="0" max="100" value="50">
-        </div>
-        <div class="slider-container">
-            <label for="low" class="slider-label">LOW</label>
-            <input type="range" id="low" class="slider" min="0" max="100" value="50">
-        </div>
+        <label for="speed">Speed</label>
+        <input id="speed" type="range" min="0.1" max="2" step="0.1" value="1">
+
+        <label for="granularity">Granularity</label>
+        <input id="granularity" type="range" min="1" max="100" value="50">
+
+        <label for="high">High</label>
+        <input id="high" type="range" min="-20" max="20" value="0">
+
+        <label for="mid">Mid</label>
+        <input id="mid" type="range" min="-20" max="20" value="0">
+
+        <label for="low">Low</label>
+        <input id="low" type="range" min="-20" max="20" value="0">
     </div>
-
     <div class="footer">
-        <p>Created by member420 / kurbloris</p>
-        <a href="https://kurbloris.bandcamp.com" target="_blank">Bandcamp</a>
-        <a href="https://github.com/wemakenoise" target="_blank">GitHub</a>
+        <p>Made by <a href="https://kurbloris.bandcamp.com" target="_blank">Kurb Loris (member420)</a> • <a href="https://github.com/wemakenoise/" target="_blank">GitHub</a></p>
     </div>
-
     <script>
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        let oscillator;
+        let audioContext;
+        let noiseNode;
         let gainNode;
         let isPlaying = false;
-        let randomGranularityInterval;
+        let filterHigh, filterMid, filterLow;
+        let bufferSize = 256;
+        let debounceTimer;
 
-        const highShelf = audioContext.createBiquadFilter();
-        highShelf.type = "highshelf";
-        highShelf.frequency.value = 3000;
+        function initializeAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            gainNode = audioContext.createGain();
+            gainNode.gain.value = 0.1; // Установите начальную громкость на 10%
 
-        const midPeaking = audioContext.createBiquadFilter();
-        midPeaking.type = "peaking";
-        midPeaking.frequency.value = 1000;
-        midPeaking.Q.value = 1;
+            filterHigh = audioContext.createBiquadFilter();
+            filterHigh.type = 'highshelf';
+            filterHigh.frequency.value = 5000;
+            filterHigh.gain.value = -6; // Понижаем высокие частоты
 
-        const lowShelf = audioContext.createBiquadFilter();
-        lowShelf.type = "lowshelf";
-        lowShelf.frequency.value = 250;
+            filterMid = audioContext.createBiquadFilter();
+            filterMid.type = 'peaking';
+            filterMid.frequency.value = 1000;
+            filterMid.Q.value = 1;
+            filterMid.gain.value = -3; // Понижаем средние частоты
 
-        function toggleNoise() {
-            if (isPlaying) {
-                stopNoise();
-            } else {
-                makeNoise();
+            filterLow = audioContext.createBiquadFilter();
+            filterLow.type = 'lowshelf';
+            filterLow.frequency.value = 200;
+            filterLow.gain.value = -3; // Понижаем низкие частоты
+
+            gainNode
+                .connect(filterLow)
+                .connect(filterMid)
+                .connect(filterHigh)
+                .connect(audioContext.destination);
+        }
+
+        function createWhiteNoise() {
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1; // Random values between -1 and 1
             }
+
+            const noiseSource = audioContext.createBufferSource();
+            noiseSource.buffer = buffer;
+            noiseSource.loop = true;
+            return noiseSource;
         }
 
         function makeNoise() {
-            oscillator = audioContext.createOscillator();
-            gainNode = audioContext.createGain();
-
             const volumeControl = document.getElementById('volume');
-            const pitchControl = document.getElementById('pitch');
             const speedControl = document.getElementById('speed');
             const granularityControl = document.getElementById('granularity');
             const highControl = document.getElementById('high');
             const midControl = document.getElementById('mid');
             const lowControl = document.getElementById('low');
 
-            volumeControl.addEventListener('input', () => {
-                gainNode.gain.value = volumeControl.value / 100 * 0.3;
-            });
+            stopNoise();
 
-            pitchControl.addEventListener('input', () => {
-                oscillator.frequency.value = pitchControl.value * 10;
+            bufferSize = Math.max(audioContext.sampleRate / granularityControl.value, 256);
+            noiseNode = createWhiteNoise();
+            noiseNode.playbackRate.value = parseFloat(speedControl.value);
+
+            gainNode.gain.value = volumeControl.value / 100;
+
+            volumeControl.addEventListener('input', () => {
+                gainNode.gain.value = volumeControl.value / 100;
             });
 
             speedControl.addEventListener('input', () => {
-                oscillator.detune.value = speedControl.value * 10;
+                noiseNode.playbackRate.value = parseFloat(speedControl.value);
             });
 
             granularityControl.addEventListener('input', () => {
-                if (!randomGranularityInterval) {
-                    oscillator.frequency.value += Math.random() * granularityControl.value - granularityControl.value / 2;
-                }
+                if (debounceTimer) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    bufferSize = Math.max(audioContext.sampleRate / granularityControl.value, 256);
+                    makeNoise();
+                }, 100);
             });
 
             highControl.addEventListener('input', () => {
-                highShelf.gain.value = highControl.value - 50;
+                filterHigh.gain.value = parseFloat(highControl.value);
             });
 
             midControl.addEventListener('input', () => {
-                midPeaking.gain.value = midControl.value - 50;
+                filterMid.gain.value = parseFloat(midControl.value);
             });
 
             lowControl.addEventListener('input', () => {
-                lowShelf.gain.value = lowControl.value - 50;
+                filterLow.gain.value = parseFloat(lowControl.value);
             });
 
-            oscillator.type = 'square';
-            oscillator.frequency.value = pitchControl.value * 10;
-            gainNode.gain.value = volumeControl.value / 100;
-
-            oscillator.connect(lowShelf)
-                     .connect(midPeaking)
-                     .connect(highShelf)
-                     .connect(gainNode)
-                     .connect(audioContext.destination);
-            oscillator.start();
-
+            noiseNode.connect(gainNode);
+            noiseNode.start();
             isPlaying = true;
-            document.querySelector('.button').textContent = 'STOP NOISE';
+            document.querySelector('.button').textContent = 'Stop Noise';
         }
 
         function stopNoise() {
-            if (oscillator) {
-                oscillator.stop();
-                oscillator.disconnect();
+            if (noiseNode) {
+                try {
+                    noiseNode.stop();
+                } catch (e) {
+                    console.error("Error stopping noise node:", e);
+                }
+                noiseNode.disconnect();
             }
-            if (gainNode) {
-                gainNode.disconnect();
-            }
-
-            clearInterval(randomGranularityInterval);
-            randomGranularityInterval = null;
-
             isPlaying = false;
-            document.querySelector('.button').textContent = 'MAKE NOISE';
+            document.querySelector('.button').textContent = 'Make Noise';
         }
 
-        function toggleRandomGranularity() {
-            const granularityControl = document.getElementById('granularity');
+        function toggleNoise() {
+            if (!audioContext) {
+                initializeAudio();
+            }
 
-            if (randomGranularityInterval) {
-                clearInterval(randomGranularityInterval);
-                randomGranularityInterval = null;
-                granularityControl.disabled = false;
+            if (isPlaying) {
+                stopNoise();
             } else {
-                granularityControl.disabled = true;
-                let phase = 0;
-
-                randomGranularityInterval = setInterval(() => {
-                    const randomValue = Math.sin(phase) * 50 + 50;
-                    granularityControl.value = randomValue;
-                    oscillator.frequency.value += Math.random() * randomValue - randomValue / 2;
-                    phase += 0.1;
-                }, 50);
+                makeNoise();
             }
         }
     </script>
